@@ -1144,6 +1144,7 @@ const HeroSection: React.FC<HeroSectionProps> = memo(({
       setTrailerError(false);
       setTrailerReady(false);
       setTrailerPreloaded(false);
+      startedOnReadyRef.current = false;
 
       // Small delay to avoid blocking the UI render
       timerId = setTimeout(async () => {

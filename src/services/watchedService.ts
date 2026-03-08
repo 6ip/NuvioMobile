@@ -765,6 +765,12 @@ class WatchedService {
     ): Promise<void> {
         try {
             if (watched) {
+                // If existing progress has real playback data, don't overwrite with placeholder
+                const existing = await storageService.getWatchProgress(id, type, episodeId);
+                if (existing && existing.currentTime > 1 && existing.duration > 1) {
+                    return;
+                }
+
                 // Create a "completed" progress entry (100% watched)
                 const progress = {
                     currentTime: 1, // Minimal values to indicate completion
@@ -775,7 +781,8 @@ class WatchedService {
                 };
                 await storageService.setWatchProgress(id, type, progress, episodeId, {
                     forceWrite: true,
-                    forceNotify: true
+                    forceNotify: true,
+                    preserveTimestamp: true,
                 });
 
                 // Also set the legacy watched flag for movies

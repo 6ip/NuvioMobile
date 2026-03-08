@@ -1363,7 +1363,10 @@ class SupabaseSyncService {
 
       const local = await storageService.getWatchProgress(row.content_id, type, episodeId);
       const remoteLastWatched = this.normalizeEpochMs(row.last_watched);
-      if (local && Number(local.lastUpdated || 0) >= remoteLastWatched) {
+      // Always pull remote data if local is a placeholder (currentTime=1,duration=1)
+      // to recover from corruption by watched-items sync
+      const isPlaceholder = local && local.currentTime === 1 && local.duration === 1;
+      if (local && !isPlaceholder && Number(local.lastUpdated || 0) >= remoteLastWatched) {
         continue;
       }
 

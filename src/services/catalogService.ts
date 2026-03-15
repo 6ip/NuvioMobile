@@ -1615,7 +1615,7 @@ class CatalogService {
                 const sectionName = `${addon.name} - ${catalogLabel}`;
                 const catalogIndex = addonRank * 1000 + ci;
 
-                allPendingSections.push({ addonId: `${addon.id}||${catalog.id}`, addonName: addon.name, sectionName, catalogIndex, results: stamped });
+                allPendingSections.push({ addonId: `${addon.id}||${catalog.type}||${catalog.id}`, addonName: addon.name, sectionName, catalogIndex, results: stamped });
               }
             } else {
               const s = settled[0];

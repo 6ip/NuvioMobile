@@ -751,8 +751,8 @@ const MetadataScreen: React.FC = () => {
 
   // Ultra-optimized animated styles - minimal calculations with conditional updates
   const containerStyle = useAnimatedStyle(() => ({
-    opacity: isScreenFocused ? animations.screenOpacity.value : 0.8,
-  }), [isScreenFocused]);
+    opacity: animations.screenOpacity.value,
+  }), []);
 
   const contentStyle = useAnimatedStyle(() => ({
     opacity: animations.contentOpacity.value,

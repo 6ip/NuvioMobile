@@ -91,8 +91,31 @@ export async function mergeTraktContinueWatching({
 
   const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
   const sortedPlaybackItems = [...playbackItems]
-    .sort((a, b) => new Date(b.paused_at).getTime() - new Date(a.paused_at).getTime())
-    .slice(0, 30);
+  .sort((a, b) => {
+    const getBaseTime = (item: any) =>
+      new Date(
+        item.paused_at || 
+        item.updated_at || 
+        item.last_watched_at || 
+        0
+      ).getTime();
+
+    const getPriorityTime = (item: any) => {
+      const base = getBaseTime(item);
+      // NEW EPISODE PRIORITY BOOST
+      if (item.episode && (item.progress ?? 0) < 1) {
+        const aired = new Date(item.episode.first_aired || 0).getTime();
+        const daysSinceAired = (Date.now() - aired) / (1000 * 60 * 60 * 24);
+        if (daysSinceAired >= 0 && daysSinceAired < 60) {
+          return base + 1000000000; // boost to top on aired ep
+        }
+      }
+      return base;
+    };
+
+    return getPriorityTime(b) - getPriorityTime(a);
+  })
+  .slice(0, 30);
 
   for (const item of sortedPlaybackItems) {
     try {

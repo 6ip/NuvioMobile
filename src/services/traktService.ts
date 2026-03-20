@@ -690,9 +690,13 @@ export class TraktService {
     const now = Date.now();
     let cleanupCount = 0;
 
-    // Remove stop calls older than the debounce window
+    // Retain stop records for 5 minutes so the restart-prevention guard in
+    // scrobbleStart() has time to work. The old value was STOP_DEBOUNCE_MS (1s),
+    // which meant every 15-minute cleanup tick wiped all stop records immediately,
+    // completely defeating the 30s restart window.
+    const STOP_RETENTION_MS = 5 * 60 * 1000;
     for (const [key, timestamp] of this.lastStopCalls.entries()) {
-      if (now - timestamp > this.STOP_DEBOUNCE_MS) {
+      if (now - timestamp > STOP_RETENTION_MS) {
         this.lastStopCalls.delete(key);
         cleanupCount++;
       }
@@ -3246,14 +3250,12 @@ export class TraktService {
    */
   private handleAppStateChange = (nextState: AppStateStatus) => {
     if (nextState !== 'active') {
-      // Clear tracking maps to reduce memory pressure when app goes to background
-      this.scrobbledItems.clear();
-      this.scrobbledTimestamps.clear();
-      this.currentlyWatching.clear();
-      this.lastSyncTimes.clear();
-      this.lastStopCalls.clear();
-
-      // Clear request queue to prevent background processing
+      // Only clear the request queue to prevent background processing.
+      // DO NOT clear scrobbledItems / currentlyWatching / lastStopCalls here.
+      // Clearing them causes duplicate scrobble entries when the app backgrounds
+      // during a long pause and then resumes — all dedup guards are gone and
+      // scrobbleStart fires a fresh /scrobble/start for the same content.
+      // These maps are small and already expire via cleanupOldStopCalls().
       this.requestQueue = [];
       this.isProcessingQueue = false;
     }

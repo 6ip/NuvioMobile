@@ -309,14 +309,6 @@ export function useTraktAutosync(options: TraktAutosyncOptions) {
       return;
     }
 
-    // Skip if session was already stopped (e.g. after background/pause).
-    // Without this, the fallback "force start" block inside handleProgressUpdate
-    // would fire a new /scrobble/start on the first periodic save after a remount,
-    // bypassing the hasStopped guard in handlePlaybackStart entirely.
-    if (hasStopped.current) {
-      return;
-    }
-
     try {
       const rawProgress = (currentTime / duration) * 100;
       const progressPercent = Math.min(100, Math.max(0, rawProgress));
@@ -339,6 +331,19 @@ export function useTraktAutosync(options: TraktAutosyncOptions) {
           if (traktSuccess) {
             lastSyncTime.current = now;
             lastSyncProgress.current = progressPercent;
+
+            // If this update crossed the completion threshold, Trakt will have silently
+            // scrobbled it. Mark complete now so unmount/background don't fire a second
+            // /scrobble/stop above threshold and create a duplicate history entry.
+            if (progressPercent >= autosyncSettings.completionThreshold) {
+              isSessionComplete.current = true;
+              const ck = getContentKey(options);
+              const existing = recentlyStoppedSessions.get(ck);
+              if (existing) {
+                recentlyStoppedSessions.set(ck, { ...existing, isComplete: true, progress: progressPercent });
+              }
+              logger.log(`[TraktAutosync] Threshold reached via immediate progress update (${progressPercent.toFixed(1)}%), marking session complete`);
+            }
 
             // Update local storage sync status
             await storageService.updateTraktSyncStatus(
@@ -375,6 +380,19 @@ export function useTraktAutosync(options: TraktAutosyncOptions) {
             lastSyncTime.current = now;
             lastSyncProgress.current = progressPercent;
 
+            // If this periodic update crossed the completion threshold, Trakt will have
+            // silently scrobbled it. Mark complete now so unmount/background don't fire
+            // a second /scrobble/stop above threshold and create a duplicate history entry.
+            if (progressPercent >= autosyncSettings.completionThreshold) {
+              isSessionComplete.current = true;
+              const ck = getContentKey(options);
+              const existing = recentlyStoppedSessions.get(ck);
+              if (existing) {
+                recentlyStoppedSessions.set(ck, { ...existing, isComplete: true, progress: progressPercent });
+              }
+              logger.log(`[TraktAutosync] Threshold reached via progress update (${progressPercent.toFixed(1)}%), marking session complete to prevent duplicate scrobble`);
+            }
+
             // Update local storage sync status
             await storageService.updateTraktSyncStatus(
               options.id,
@@ -385,7 +403,6 @@ export function useTraktAutosync(options: TraktAutosyncOptions) {
               currentTime
             );
 
-            // Progress sync logging removed
             logger.log(`[TraktAutosync] Trakt: Progress updated to ${progressPercent.toFixed(1)}%`);
           }
         }

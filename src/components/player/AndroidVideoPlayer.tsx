@@ -271,7 +271,6 @@ const AndroidVideoPlayer: React.FC = () => {
 
   const nextEpisodeHook = useNextEpisode(type, season, episode, groupedEpisodes, (metadataResult as any)?.groupedEpisodes, episodeId);
 
-  const currentTmdbId = (metadata as any)?.tmdbId || (metadata as any)?.external_ids?.tmdb_id;
 
   const { segments: skipIntervals, outroSegment } = useSkipSegments({
     imdbId: resolvedImdbId || (id?.startsWith('tt') ? id : undefined),

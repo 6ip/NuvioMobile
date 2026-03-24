@@ -104,6 +104,10 @@ export function convertMetaToStreamingContentEnhanced(
   if ((meta as any).videos) {
     converted.videos = (meta as any).videos;
   }
+  // CUSTOM CATALOG POSTERS
+  if ((meta as any).seasons) {
+    converted.seasons = (meta as any).seasons;
+  }
 
   return converted;
 }

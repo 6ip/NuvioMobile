@@ -56,6 +56,10 @@ export interface StreamingContent {
   released?: string;
   trailerStreams?: any[];
   videos?: any[];
+  seasons?: Array<{
+    season: number;
+    poster?: string;
+  }>;
   inLibrary?: boolean;
   directors?: string[];
   creators?: string[];

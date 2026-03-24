@@ -840,7 +840,7 @@ const SeriesContentComponent: React.FC<SeriesContentProps> = ({
     );
   }
 
-  const  = () => {
+  const renderSeasonSelector = () => {
     // Show selector if we have grouped episodes data or can derive from episodes
     if (!groupedEpisodes || Object.keys(groupedEpisodes).length <= 1) {
       return null;
